@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Button } from 'react-native';
+import { View, Button, Text, FlatList, SafeAreaView, StyleSheet } from 'react-native';
 import { BleManager } from 'react-native-ble-plx';
 
 export default function BluetoothScanner() {
@@ -19,15 +19,12 @@ export default function BluetoothScanner() {
     try {
       const subscription = bleManager.onStateChange((state) => {
         if (state === 'PoweredOn') {
-          console.log("I am inside power on");
           bleManager.startDeviceScan(null, null, (error, device) => {
-            console.log("scanning started....");
             if (error) {
               console.error('Error scanning:', error);
               return;
             }
             if (device) {
-              console.log(device.name);
               handleDeviceFound(device);
             }
           });
@@ -44,23 +41,47 @@ export default function BluetoothScanner() {
   };
 
   const handleDeviceFound = (device: any) => {
-    console.log('Found device:', device.name); // Log the device name
-    setDevices((prevDevices) => [...prevDevices, device]);
+    console.log(device); // Log the device name
+    // Check if the device is already in the array
+    if (!devices.some((d) => d.id === device.id)) {
+      setDevices((prevDevices) => [...prevDevices, device]);
+    }
   };
   
-
   const toggleScan = () => {
     setDevices([]);
     setScanning((prevScanning) => !prevScanning);
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Button title={scanning ? 'Stop Scan' : 'Start Scan'} onPress={toggleScan} />
-      {devices.map((device, index) => (
-        <Text key={index}>{device.name}</Text>
-      ))}
-    </View>
-    
+    <SafeAreaView style={styles.container}>
+      <View style={styles.buttonContainer}>
+        <Button title={scanning ? 'Stop Scan' : 'Start Scan'} onPress={toggleScan} />
+      </View>
+      <View style={styles.listContainer}>
+        <FlatList
+          data={devices}
+          renderItem={({ item }) => <Text style={styles.deviceText}>{item.name}</Text>}
+          keyExtractor={(item, index) => index.toString()}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000', // Set background to black
+  },
+  buttonContainer: {
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  listContainer: {
+    flex: 1,
+  },
+  deviceText: {
+    color: '#FFFFFF', // Set text color to white
+  },
+});
